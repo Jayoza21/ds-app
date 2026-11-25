@@ -1,0 +1,48 @@
+name: CD Pipeline
+on:
+  push:
+    branches: [main]
+
+env:
+  OWNER: jayoza21
+
+jobs:
+  build-and-package:
+    runs-on: ubuntu-latest
+    permissions: { contents: read, packages: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build & push model service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./model_service
+          push: true
+          tags: ghcr.io/${{ env.OWNER }}/ds-model:latest
+      - name: Build & push gateway
+        uses: docker/build-push-action@v5
+        with:
+          context: ./gateway
+          push: true
+          tags: ghcr.io/${{ env.OWNER }}/ds-gateway:latest
+
+  deploy:
+    needs: build-and-package
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Deploy
+        run: |
+          docker compose pull
+          docker compose up -d
+          docker compose ps
+      - name: Smoke test
+        run: |
+          sleep 5
+          curl -sf -X POST localhost:8000/predict -H 'Content-Type: application/json' -d '{"features":[5.1,3.5,1.4,0.2]}'

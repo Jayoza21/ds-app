@@ -44,7 +44,7 @@ def predict():
     feats = request.json["features"]
     try:
         out = call_model(feats)
-        return jsonify(**out, source="model", breaker=breaker.state)
+        return jsonify(**out, source="model", breaker=breaker.state, version="v2")
     except RuntimeError as e:
         # graceful degradation / fallback
         return jsonify(prediction="unknown", source="fallback", reason=str(e), breaker=breaker.state), 200
