@@ -1,11 +1,11 @@
 services:
   model_service:
-    image: ghcr.io/jayoza/ds-model:latest
+    image: ghcr.io/jayoza21/ds-model:latest
     build: ./model_service
     ports: ["5001:5001"]
     restart: unless-stopped
   gateway:
-    image: ghcr.io/jayoza/ds-gateway:latest
+    image: ghcr.io/jayoza21/ds-gateway:latest
     build: ./gateway
     environment:
       MODEL_URL: http://model_service:5001
